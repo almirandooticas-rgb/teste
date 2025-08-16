@@ -1,0 +1,629 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Site 2 — Enviar & WhatsApp (Estilo Óticas)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"
+          crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <style>
+  :root{
+    --bg:#0d0d12; --panel:linear-gradient(180deg,#15151f,#13131c 60%,#101018);
+    --surface:#12121b; --border:#262635; --text:#f3f5f7; --muted:#b8bdc7;
+    --brand:#b00020; --brand-2:#e53935; --chip:#1e1e2b; --chip-bd:#2a2a3b; --chip-act:#23233a;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
+  header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border);background:linear-gradient(90deg,#1a1a24,#14141d 40%,#1a1a24)}
+  .brand{display:flex;align-items:center;gap:12px}
+  .brand-logo{width:36px;height:36px;border-radius:8px;object-fit:cover;background:#222;border:1px solid #333}
+  .brand-fallback{width:36px;height:36px;border-radius:999px;background:radial-gradient(circle at 30% 30%,var(--brand-2),var(--brand));display:grid;place-items:center;font-weight:900;color:#fff;letter-spacing:.5px;box-shadow:0 2px 10px rgba(229,57,53,.35)}
+  .brand-name{font-weight:800;letter-spacing:.3px}
+  .btn{background:#1c1c28;color:var(--text);border:1px solid var(--border);padding:10px 12px;border-radius:12px;cursor:pointer;font-weight:700}
+  .btn.primary{background:var(--brand);border-color:#7a0a16}
+  .btn.green{background:#128C7E;border-color:#0f6f65} /* WhatsApp vibe */
+  .btn:hover{filter:brightness(1.07)}
+  .wrap{max-width:1200px;margin:16px auto;padding:0 16px}
+  .grid2{display:grid;grid-template-columns: 1fr 520px;gap:16px}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:16px;overflow:hidden}
+  .panel{padding:16px}
+  .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin:8px 0}
+  .field{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+  .field input,.field textarea,.field select{width:100%;padding:10px 12px;border-radius:12px;border:1px solid var(--chip-bd);background:var(--surface);color:var(--text)}
+  .hint{color:var(--muted);font-size:12px}
+  .label{display:block;font-weight:600;margin-bottom:6px}
+  .badge{background:rgba(176,0,32,.18);border:1px solid rgba(176,0,32,.45);padding:2px 8px;border-radius:999px;font-size:12px;color:#ffd6da}
+  .pill{display:inline-flex;align-items:center;padding:4px 10px;border-radius:999px;border:1px solid var(--border);background:#181825;font-size:12px;color:#c9ced9}
+  .muted{color:var(--muted)}
+
+  /* PDF */
+  #pdfEmbed{width:100%;height:70vh;border-radius:14px;background:#0f0f18;border:1px solid var(--border)}
+  pre.mono{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;}
+  
+/* === Mobile upgrades === */
+:root { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+.btn.full { width: 100%; }
+input, select, textarea, button { min-height: 44px; font-size: 16px; }
+header { flex-wrap: wrap; gap: 8px; }
+header nav { display:flex; gap:8px; flex-wrap:wrap }
+#pdfEmbed { height: 75vh; }
+@media (max-width: 1024px) {
+  .grid2 { grid-template-columns: 1fr 420px; }
+  #pdfEmbed { height: 68vh; }
+}
+@media (max-width: 768px) {
+  .wrap { padding: 0 12px; }
+  .grid2 { grid-template-columns: 1fr; }
+  .row { gap: 10px; }
+  .panel { padding: 14px; }
+  #pdfEmbed { height: 62vh; }
+  .brand-name { font-size: 14px; }
+  .field { margin-bottom: 10px; }
+  /* Stack file fields better on small screens */
+  form .row[style*="gap:16px"] { display: grid; grid-template-columns: 1fr; gap: 10px !important; }
+  /* Make the primary actions sticky at the bottom */
+  .sticky-actions { position: sticky; bottom: 0; left: 0; right: 0;
+    background: linear-gradient(180deg, rgba(19,19,28,0), rgba(19,19,28,0.9) 30%, rgba(19,19,28,1));
+    padding-top: 8px; margin-top: 8px; backdrop-filter: blur(4px); }
+}
+
+</style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <img src="logo.png" alt="logo" class="brand-logo" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'">
+      <div class="brand-fallback" style="display:none">OA</div>
+      <div class="brand-name">Óticas — Enviar & WhatsApp</div>
+    </div>
+    <nav class="row">
+      <a class="btn" href="site1.html">Assinar</a>
+      <a class="btn" href="site2.html">Questionário & Envio</a>
+      <a class="btn" href="index.html">Início</a>
+    </nav>
+  </header>
+
+  <div class="wrap">
+    <div class="row"><span class="badge">Passo 2</span><span class="hint">Visualize o PDF assinado, colete dados e envie.</span></div>
+
+    <section class="grid2">
+      <!-- Documento -->
+      <div class="card panel">
+        <h2 style="margin:0 0 8px 0">Documento</h2>
+        <div id="docInfo" class="muted" style="font-size:12px"></div>
+        <embed id="pdfEmbed" type="application/pdf" />
+        <div class="hint">Se o PDF não aparecer, clique com o botão direito e abra em nova guia.</div>
+      </div>
+
+      <!-- Formulário -->
+      <form id="form" class="card panel">
+        <h2 style="margin:0 0 8px 0">Questionário</h2>
+        <div class="row" style="margin-top:0">
+          <span class="pill">Armazenado localmente (IndexedDB)</span>
+          <span class="pill">WhatsApp + ZIP fallback</span>
+        </div>
+
+        <div class="row" style="gap:16px">
+          <div class="field" style="flex:1">
+            <label class="label">Nome completo</label>
+            <input name="nome" required />
+          </div>
+          <div class="field" style="flex:1">
+            <label class="label">CPF</label>
+            <input name="cpf" required />
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="label">Endereço</label>
+          <input name="endereco" required />
+        </div>
+        <div class="field">
+          <label class="label">Assinatura (Nome completo)</label>
+          <input name="assinatura" required placeholder="Digite seu nome completo"
+                 style="font-weight:bold; font-size:16px; border:2px solid #e53935;" />
+          <p class="hint">Essa assinatura digitada será registrada junto com o documento.</p>
+        </div>
+
+
+        <div class="row" style="gap:16px">
+          <div class="field" style="flex:1">
+            <label class="label">RG Frente (imagem/PDF)</label>
+            <input type="file" name="rg_frente" accept="image/*,application/pdf" required />
+          </div>
+          <div class="field" style="flex:1">
+            <label class="label">RG Verso (imagem/PDF)</label>
+            <input type="file" name="rg_verso" accept="image/*,application/pdf" required />
+          </div>
+          <div class="field" style="flex:1">
+            <label class="label">Comprovante de residência</label>
+            <input type="file" name="comp_residencia" accept="image/*,application/pdf" required />
+          </div>
+          <div class="field" style="flex:1">
+            <label class="label">Foto do rosto segurando RG</label>
+            <input type="file" name="rosto_rg" accept="image/*" required />
+          </div>
+          <div class="field" style="flex:1">
+            <label class="label">Foto do CPF</label>
+            <input type="file" name="foto_cpf" accept="image/*" required />
+          </div>
+        </div>
+
+        <div class="row" style="gap:16px;align-items:flex-end">
+          <div class="field" style="flex:1">
+            <label class="label">Telefone WhatsApp (DDI+DDD+Número)</label>
+            <input id="whatsPhone" placeholder="ex.: 55XXXXXXXXXXX" />
+            <p class="hint">Opcional. Se preencher, abrimos a conversa com esse número.</p>
+          </div>
+          <div class="field sticky-actions" style="flex:1">
+            <label class="label">&nbsp;</label>
+            <button id="btnSend" class="btn green full" type="button">Enviar via WhatsApp</button>
+          </div>
+        </div>
+
+        <div class="row">
+          <span id="msg" class="hint"></span>
+        </div>
+        <div id="quota" class="hint"></div>
+      </form>
+    </section>
+
+    <section class="card panel" style="margin-top:16px">
+      <div class="row">
+        <button id="btnExportZip" class="btn full">Gerar ZIP</button>
+        <span class="hint">Baixa o PDF assinado + anexos + um JSON com os dados (opcional).</span>
+      </div>
+      <div style="margin-top:10px">
+        <h3 style="margin:0 0 6px 0">Submissões salvas</h3>
+        <pre id="subsOut" class="mono" style="font-size:12px;background:#0f0f18;border:1px solid var(--border);border-radius:12px;padding:10px;color:#9af59a;max-height:260px;overflow:auto"></pre>
+      </div>
+    </section>
+
+    <div id="picker"></div>
+
+    <p class="hint" style="margin-top:8px">Isto é um carimbo visual no PDF (não é assinatura digital ICP-Brasil).</p>
+  </div>
+
+  <script>
+  // ==== IndexedDB helper ====
+  const IDB_DB_NAME = 'assinaturas_db_v1';
+  const IDB_VERSION = 2; // inclui store 'files'
+  let _dbPromise = null;
+
+  function idbOpen() {
+    if (_dbPromise) return _dbPromise;
+    _dbPromise = new Promise((resolve, reject) => {
+      const req = indexedDB.open(IDB_DB_NAME, IDB_VERSION);
+      req.onupgradeneeded = () => {
+        const db = req.result;
+        if (!db.objectStoreNames.contains('pdfs')) db.createObjectStore('pdfs');
+        if (!db.objectStoreNames.contains('metas')) db.createObjectStore('metas');
+        if (!db.objectStoreNames.contains('subs')) db.createObjectStore('subs');
+        if (!db.objectStoreNames.contains('files')) db.createObjectStore('files');
+      };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+    return _dbPromise;
+  }
+  async function idbPut(store, key, val) {
+    const db = await idbOpen();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(store, 'readwrite');
+      tx.oncomplete = ()=> resolve();
+      tx.onerror = ()=> reject(tx.error);
+      tx.objectStore(store).put(val, key);
+    });
+  }
+  async function idbGet(store, key) {
+    const db = await idbOpen();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(store, 'readonly');
+      tx.onerror = ()=> reject(tx.error);
+      const req = tx.objectStore(store).get(key);
+      req.onsuccess = ()=> resolve(req.result);
+      req.onerror = ()=> reject(req.error);
+    });
+  }
+  async function idbGetAllKeys(store) {
+    const db = await idbOpen();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(store, 'readonly');
+      tx.onerror = ()=> reject(tx.error);
+      const req = tx.objectStore(store).getAllKeys();
+      req.onsuccess = ()=> resolve(req.result || []);
+      req.onerror = ()=> reject(req.error);
+    });
+  }
+
+  // ==== Utilidades ====
+  const paramsHash = new URLSearchParams(location.hash.replace(/^#/, ''));
+  const id = paramsHash.get('id');
+
+  const msg = document.getElementById('msg');
+  const pdfEmbed = document.getElementById('pdfEmbed');
+  const subsOut = document.getElementById('subsOut');
+  const docInfo = document.getElementById('docInfo');
+  const picker = document.getElementById('picker');
+  const quotaLabel = document.getElementById('quota');
+  const phoneInput = document.getElementById('whatsPhone');
+
+  function fmtMB(bytes){ return (bytes/1024/1024).toFixed(1)+' MB'; }
+
+  async function showQuota() {
+    try {
+      if (navigator.storage && navigator.storage.estimate) {
+        const {quota=0, usage=0} = await navigator.storage.estimate();
+        quotaLabel.textContent = 'Uso de armazenamento: ' + fmtMB(usage) + ' / ' + fmtMB(quota);
+      }
+    } catch {}
+  }
+  showQuota();
+
+  async function listAllSigned() {
+    const keys = await idbGetAllKeys('pdfs');
+    const list = [];
+    for (const k of keys) {
+      const meta = await idbGet('metas', k);
+      list.push({ id: String(k), meta: meta || {} });
+    }
+    return list;
+  }
+
+  async function renderPicker() {
+    const list = await listAllSigned();
+    const box = document.createElement('div');
+    box.className = 'bg-white rounded-2xl shadow p-4 space-y-3';
+    const h = document.createElement('h2'); h.className='font-semibold'; h.textContent='Escolha um documento salvo'; box.appendChild(h);
+    if (!list.length) {
+      const p = document.createElement('p'); p.textContent = 'Nenhum PDF assinado encontrado neste navegador.';
+      p.className = 'text-sm text-gray-600'; box.appendChild(p);
+    } else {
+      const ul = document.createElement('ul'); ul.className = 'space-y-2';
+      list.forEach(item => {
+        const li = document.createElement('li');
+        li.className = 'flex items-center justify-between border rounded p-2';
+        const span = document.createElement('span');
+        span.className = 'text-xs text-gray-700';
+        span.textContent = `ID: ${item.id} • criado: ${item.meta?.createdAt || '-'} • arquivo: ${item.meta?.filename || '-'}`;
+        const btn = document.createElement('button');
+        btn.textContent = 'Abrir';
+        btn.className = 'bg-black text-white rounded px-3 py-1 text-xs';
+        btn.onclick = () => { window.location.hash = '#id=' + item.id; window.location.reload(); };
+        li.appendChild(span); li.appendChild(btn); ul.appendChild(li);
+      });
+      box.appendChild(ul);
+    }
+    picker.appendChild(box);
+  }
+
+  (async function init() {
+    await idbOpen();
+    if (!id) {
+      await renderPicker();
+    } else {
+      const blob = await idbGet('pdfs', id);
+      if (!blob) {
+        document.getElementById('docBox').innerHTML =
+          '<div class="text-red-600">PDF não encontrado neste navegador para este link.</div>';
+        await renderPicker();
+      } else {
+        const meta = await idbGet('metas', id) || {};
+        docInfo.textContent = `ID: ${id} • criado em: ${meta.createdAt || '-'} • origem: ${meta.filename || '-'}`;
+        const url = URL.createObjectURL(blob);
+        pdfEmbed.src = url;
+      }
+      await refreshSubs();
+    }
+  })();
+
+  async function maybeDownscaleImage(file, maxDim=2000){
+    if (!file.type.startsWith('image/')) return file;
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        let {width:w, height:h} = img;
+        if (Math.max(w,h) <= maxDim) return resolve(file);
+        const ratio = w>h ? maxDim/w : maxDim/h;
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(w*ratio);
+        canvas.height = Math.round(h*ratio);
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        canvas.toBlob((blob)=>{
+          resolve(new File([blob], file.name.replace(/(\.[a-z0-9]+)?$/i, '.jpg'), {type:'image/jpeg'}));
+        }, 'image/jpeg', 0.85);
+      };
+      img.onerror = ()=> resolve(file);
+      img.src = URL.createObjectURL(file);
+    });
+  }
+
+  async function saveSubmissionFromForm() {
+    const formEl = document.getElementById('form');
+    // Validar required nativo
+    if (!formEl.reportValidity()) throw new Error('Preencha todos os campos obrigatórios.');
+
+    const fd = new FormData(formEl);
+    const nome = (fd.get('nome') || '').toString();
+    const cpf = (fd.get('cpf') || '').toString();
+    const endereco = (fd.get('endereco') || '').toString();
+    const assinatura = (fd.get('assinatura') || '').toString();
+
+    let fFrente = fd.get('rg_frente');
+    let fVerso  = fd.get('rg_verso');
+    let fComp   = fd.get('comp_residencia');
+    let fRosto  = fd.get('rosto_rg');
+    let fCpf    = fd.get('foto_cpf');
+
+    // Compressão de imagens para poupar espaço em alguns navegadores
+    fFrente = fFrente && fFrente.size ? await maybeDownscaleImage(fFrente) : null;
+    fVerso  = fVerso  && fVerso.size  ? await maybeDownscaleImage(fVerso)  : null;
+    fComp   = fComp   && fComp.size   ? await maybeDownscaleImage(fComp)   : null;
+    fRosto  = fRosto  && fRosto.size  ? await maybeDownscaleImage(fRosto)  : null;
+    fCpf    = fCpf    && fCpf.size    ? await maybeDownscaleImage(fCpf)    : null;
+
+    // Armazenar anexos como Blobs na store 'files'
+    const attach = {};
+    for (const [k, f] of Object.entries({rg_frente:fFrente, rg_verso:fVerso, comp_residencia:fComp, rosto_rg:fRosto, foto_cpf:fCpf})) {
+      if (f) {
+        const key = `${id}:sub:${Date.now()}:${k}:${crypto.getRandomValues(new Uint32Array(1))[0]}`;
+        await idbPut('files', key, new Blob([await f.arrayBuffer()], {type: f.type || 'application/octet-stream'}));
+        attach[k] = { key, name: f.name, type: f.type, size: f.size };
+      } else {
+        attach[k] = null;
+      }
+    }
+
+    // Guardar submissão (sem base64)
+    const sub = {
+      submittedAt: new Date().toISOString(),
+      nome, cpf, endereco, assinatura,
+      files: attach
+    };
+    const arr = (await idbGet('subs', id)) || [];
+    arr.push(sub);
+    await idbPut('subs', id, arr);
+
+    await refreshSubs();
+    return { sub, allSubs: arr };
+  }
+
+  async function blobsForLatestSubmission() {
+    const subs = (await idbGet('subs', id)) || [];
+    const last = subs[subs.length - 1];
+    const files = [];
+    if (!last) return files;
+    for (const [k, info] of Object.entries(last.files || {})) {
+      if (info && info.key) {
+        const blob = await idbGet('files', info.key);
+        if (blob) {
+          files.push(new File([blob], info.name || k, { type: blob.type || 'application/octet-stream' }));
+        }
+      }
+    }
+    return files;
+  }
+
+  async function getSignedPdfFile() {
+    const pdfBlob = await idbGet('pdfs', id);
+    return new File([pdfBlob], 'documento_assinado.pdf', { type: 'application/pdf' });
+  }
+
+  async function sendViaWebShare() {
+    // Tenta compartilhar PDF + anexos pelo Web Share API (mobile)
+    const files = [await getSignedPdfFile(), ...(await blobsForLatestSubmission())];
+    const text = 'Segue o documento assinado e anexos.';
+    if (navigator.canShare && navigator.canShare({ files })) {
+      await navigator.share({ files, text, title: 'Assinatura & Anexos' });
+      return true;
+    }
+    return false;
+  }
+
+  async function fallbackZipAndWhatsApp() {
+    // Gera ZIP e abre WhatsApp com mensagem pronta (usuário anexa o arquivo manualmente)
+    const pdfBlob = await idbGet('pdfs', id);
+    const meta = (await idbGet('metas', id)) || {};
+    const subs = (await idbGet('subs', id)) || [];
+    const zip = new JSZip();
+    zip.file('meta.json', JSON.stringify({ id, ...meta, submissionsCount: subs.length }, null, 2));
+    zip.file('documento_assinado.pdf', pdfBlob);
+    for (let i=0;i<subs.length;i++) {
+      const s = subs[i];
+      const folder = zip.folder(`submissao_${i+1}`);
+      folder.file('dados.json', JSON.stringify({
+        submittedAt: s.submittedAt,
+        nome: s.nome, cpf: s.cpf, endereco: s.endereco, assinatura: s.assinatura
+      }, null, 2));
+      for (const [k, info] of Object.entries(s.files || {})) {
+        if (info && info.key) {
+          const blob = await idbGet('files', info.key);
+          if (blob) folder.file(info.name || k, blob);
+        }
+      }
+    }
+    const outBlob = await zip.generateAsync({ type: 'blob' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(outBlob);
+    a.download = `pacote_${id}.zip`; a.click();
+
+    const phone = (phoneInput.value || '').replace(/\D/g, '');
+    const message = encodeURIComponent('Oi! Baixei o arquivo ZIP com o documento assinado e anexos. Vou anexar aqui na conversa.');
+    const base = phone ? `https://wa.me/${phone}?text=${message}` : `https://wa.me/?text=${message}`;
+    window.open(base, '_blank');
+  }
+
+  async function refreshSubs() {
+    const arr = (await idbGet('subs', id)) || [];
+    subsOut.textContent = JSON.stringify(arr.map((s, i) => ({
+      i,
+      submittedAt: s.submittedAt,
+      nome: s.nome, cpf: s.cpf, endereco: s.endereco, assinatura: s.assinatura,
+      anexos: Object.entries(s.files || {}).filter(([k,v])=>!!v).map(([k,v])=>`${k} -> ${v.name} (${v.type || ''})`)
+    })), null, 2);
+  }
+
+  document.getElementById('btnSend').addEventListener('click', async () => {
+    msg.textContent = '';
+    try {
+      await idbOpen();
+      // Salvar/atualizar submissão com os dados atuais do formulário
+      await saveSubmissionFromForm();
+      // Tentar compartilhar diretamente (mobile)
+      const ok = await sendViaWebShare();
+      if (!ok) {
+        await fallbackZipAndWhatsApp();
+      } else {
+        // Se share ok e número informado, ainda abrimos o chat com msg (sem anexos) para facilitar o envio
+        const phone = (phoneInput.value || '').replace(/\D/g, '');
+        if (phone) {
+          const message = encodeURIComponent('Enviei os arquivos via compartilhamento.');
+          const base = `https://wa.me/${phone}?text=${message}`;
+          window.open(base, '_blank');
+        }
+      }
+      msg.textContent = '✅ Pronto.';
+    } catch (e) {
+      console.error(e);
+      msg.textContent = 'Erro ao enviar. Revise os campos e tente novamente.';
+    }
+  });
+
+  document.getElementById('btnExportZip').addEventListener('click', async () => {
+    // utilitário manual
+    const pdfBlob = await idbGet('pdfs', id);
+    if (!pdfBlob) { alert('PDF não encontrado no navegador.'); return; }
+    const meta = (await idbGet('metas', id)) || {};
+    const subs = (await idbGet('subs', id)) || [];
+
+    const zip = new JSZip();
+    zip.file('meta.json', JSON.stringify({ id, ...meta, submissionsCount: subs.length }, null, 2));
+    zip.file('documento_assinado.pdf', pdfBlob);
+
+    for (let i=0;i<subs.length;i++) {
+      const s = subs[i];
+      const folder = zip.folder(`submissao_${i+1}`);
+      folder.file('dados.json', JSON.stringify({
+        submittedAt: s.submittedAt,
+        nome: s.nome, cpf: s.cpf, endereco: s.endereco, assinatura: s.assinatura
+      }, null, 2));
+      for (const [k, info] of Object.entries(s.files || {})) {
+        if (info && info.key) {
+          const blob = await idbGet('files', info.key);
+          if (blob) folder.file(info.name || k, blob);
+        }
+      }
+    }
+
+    const outBlob = await zip.generateAsync({ type: 'blob' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(outBlob);
+    a.download = `pacote_${id}.zip`; a.click();
+  });
+</script>
+<!-- INÍCIO: Integração Upload Google Drive + WhatsApp -->
+<script>
+// Modo "apenas upload": sobe para a nuvem e mostra os links. Não abre WhatsApp e não usa fallback ZIP.
+// Corrigido: evita recursão renomeando helpers para NÃO colidir com window.getSignedPdfFile / window.blobsForLatestSubmission
+
+async function tryIdbOpen(){ try { const fn = window['idbOpen']; if (typeof fn === 'function') return await fn(); } catch(e){} }
+async function trySaveSubmission(){ try { const fn = window['saveSubmissionFromForm']; if (typeof fn === 'function') return await fn(); } catch(e){} }
+
+async function resolveSignedPdfFile(){
+  const existing = window['getSignedPdfFile'];
+  if (existing && existing !== resolveSignedPdfFile) return await existing();
+  const el = document.querySelector('#pdfAssinado, input[data-signed-pdf]');
+  if (el && el.files && el.files[0]) return el.files[0];
+  throw new Error('PDF assinado não encontrado. Ajuste getSignedPdfFile() no seu app.');
+}
+
+async function resolveLatestSubmissionBlobs(){
+  const existing = window['blobsForLatestSubmission'];
+  if (existing && existing !== resolveLatestSubmissionBlobs) return await existing();
+  const files = [];
+  document.querySelectorAll('input[type="file"]').forEach(inp => {
+    if (inp.id === 'pdfAssinado') return;
+    for (const f of (inp.files || [])) files.push(f);
+  });
+  return files;
+}
+
+async function collectAllFilesForUpload() {
+  const pdf = await resolveSignedPdfFile();
+  const attaches = await resolveLatestSubmissionBlobs();
+  const list = [];
+  if (pdf) list.push(pdf);
+  for (const a of (attaches || [])) list.push(a);
+  return list;
+}
+
+async function uploadToCloud(files) {
+  if (!files || !files.length) throw new Error('Nenhum arquivo para upload.');
+  const fd = new FormData();
+  for (const f of files) {
+    const name = f.name || 'arquivo';
+    fd.append('files', f, name);
+  }
+  const res = await fetch('/.netlify/functions/upload', { method: 'POST', body: fd });
+  if (!res.ok) throw new Error('Falha no upload: ' + (await res.text()));
+  const data = await res.json();
+  return data.files || [];
+}
+
+(function attachUploadOnly(){
+  let msgEl = document.querySelector('#status, #msg, .status');
+  if (!msgEl) {
+    msgEl = document.createElement('div');
+    msgEl.id = 'status';
+    msgEl.style.marginTop = '12px';
+    msgEl.style.fontSize = '14px';
+    document.body.appendChild(msgEl);
+  }
+  function setMsgHtml(html){ msgEl.innerHTML = html; }
+
+  async function handleSend(){
+    try {
+      setMsgHtml('Enviando arquivos para a nuvem...');
+      await tryIdbOpen();
+      await trySaveSubmission();
+      const files = await collectAllFilesForUpload();
+      const uploaded = await uploadToCloud(files);
+
+      const list = (uploaded || []).map(f => {
+        const link = f.webViewLink || f.webContentLink || '#';
+        const name = f.name || 'arquivo';
+        return `<li><a href="${link}" target="_blank" rel="noopener">${name}</a></li>`;
+      }).join('');
+      setMsgHtml('✅ Upload concluído.<br>Arquivos na nuvem:<ul>' + list + '</ul>');
+    } catch (e) {
+      console.error(e);
+      setMsgHtml('Erro ao enviar: ' + (e && e.message ? e.message : e));
+      alert('Falha no upload: ' + (e && e.message ? e.message : e));
+    }
+  }
+
+  let btn = document.getElementById('btnSend') || document.querySelector('[data-action="send"], button#enviarWhatsapp');
+  if (btn && !btn.dataset._uploadOnly) {
+    btn.addEventListener('click', (ev) => { ev.preventDefault(); handleSend(); });
+    btn.dataset._uploadOnly = '1';
+    try {
+      const t = (btn.textContent || '').trim().toLowerCase();
+      if (/whatsapp/.test(t)) btn.textContent = 'Enviar (somente nuvem)';
+    } catch {}
+  } else if (!btn) {
+    const candidates = Array.from(document.querySelectorAll('button, a')).filter(el => {
+      const t = (el.textContent || '').trim().toLowerCase();
+      return /enviar|assinar/.test(t);
+    });
+    if (candidates[0] && !candidates[0].dataset._uploadOnly) {
+      candidates[0].addEventListener('click', (ev) => { ev.preventDefault(); handleSend(); });
+      candidates[0].dataset._uploadOnly = '1';
+    }
+  }
+})();
+</script>
+<!-- FIM: Integração Upload Google Drive + WhatsApp -->
+</body>
+</html>

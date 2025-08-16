@@ -1,0 +1,374 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Site 1 — Assinar Documento (Estilo Óticas)</title>
+  <!-- Scripts originais necessários -->
+  <script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"
+          crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"
+          crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <style>
+  :root{
+    --bg:#0d0d12; --panel:linear-gradient(180deg,#15151f,#13131c 60%,#101018);
+    --surface:#12121b; --border:#262635; --text:#f3f5f7; --muted:#b8bdc7;
+    --brand:#b00020; --brand-2:#e53935; --chip:#1e1e2b; --chip-bd:#2a2a3b; --chip-act:#23233a;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
+  header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border);background:linear-gradient(90deg,#1a1a24,#14141d 40%,#1a1a24)}
+  .brand{display:flex;align-items:center;gap:12px}
+  .brand-mark{width:36px;height:36px;border-radius:999px;background:radial-gradient(circle at 30% 30%,var(--brand-2),var(--brand));display:grid;place-items:center;font-weight:900;color:#fff;letter-spacing:.5px;box-shadow:0 2px 10px rgba(229,57,53,.35)}
+  .brand-name{font-weight:800;letter-spacing:.3px}
+  .btn{background:#1c1c28;color:var(--text);border:1px solid var(--border);padding:10px 12px;border-radius:12px;cursor:pointer;font-weight:700}
+  .btn.primary{background:var(--brand);border-color:#7a0a16}
+  .btn:hover{filter:brightness(1.07)}
+  .wrap{max-width:1200px;margin:16px auto;padding:0 16px}
+  .grid{display:grid;grid-template-columns: 520px 1fr;gap:16px}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:16px;overflow:hidden}
+  .panel{padding:16px}
+  .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin:8px 0}
+  .field{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+  .field input,.field textarea,.field select{width:100%;padding:10px 12px;border-radius:12px;border:1px solid var(--chip-bd);background:var(--surface);color:var(--text)}
+  .hint{color:var(--muted);font-size:12px}
+  .label{display:block;font-weight:600;margin-bottom:6px}
+  .badge{background:rgba(176,0,32,.18);border:1px solid rgba(176,0,32,.45);padding:2px 8px;border-radius:999px;font-size:12px;color:#ffd6da}
+
+  /* PDF area */
+  #pdfContainer { position: relative; }
+  #pdfCanvas { width: 100%; height: auto; display:block; background:#0f0f18 }
+  #sigMarker { position:absolute; border:2px dashed #ffd6da; pointer-events:none; display:none; width: 200px; height: 30px; }
+  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+  .result a{ color:#8ab4ff; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <div class="brand-mark">OA</div>
+      <div class="brand-name">Óticas — Assinar Documento</div>
+    </div>
+    <nav class="row">
+      <a class="btn" href="site1.html">Assinar</a>
+      <a class="btn" href="site2.html">Questionário & Envio</a>
+      <a class="btn" href="index.html">Início</a>
+    </nav>
+  </header>
+
+  <div class="wrap">
+    <div class="grid">
+      <!-- Painel de controles -->
+      <section class="card panel">
+        <div class="row"><span class="badge">Passo 1</span><span class="hint">Carregue o PDF, clique onde assinar e gere o link fixo.</span></div>
+
+        <div class="field">
+          <label class="label">PDF</label>
+          <input id="pdfFile" type="file" accept="application/pdf" />
+          <p class="hint">IndexedDB: suporta PDFs grandes (ideal para Netlify).</p>
+        </div>
+
+        <div class="field">
+  <label class="label">Assinatura (Nome completo)</label>
+  <input id="assinaturaTexto" placeholder="Digite seu nome completo" required 
+         style=" font-size:16px; border:2px solid #e53935;" />
+  <p class="hint">Digite seu nome completo como assinatura.</p>
+</div>
+
+        <div class="field">
+          <label class="label">O que está sendo assinado (termo/carimbo)</label>
+          <textarea id="carimboTexto" rows="4" placeholder="Ex.: Declaro que ..."></textarea>
+        </div>
+
+        <div class="row">
+          <div class="field" style="max-width:160px">
+            <label class="label">Tamanho da fonte</label>
+            <input id="fontSize" type="number" value="16" min="8" max="48" />
+          </div>
+          <div class="hint">Clique no PDF para marcar a posição da assinatura.</div>
+        </div>
+
+        <div class="row">
+          <button id="zoomOut" class="btn" type="button">Zoom -</button>
+          <span id="zoomVal" class="hint">100%</span>
+          <button id="zoomIn" class="btn" type="button">Zoom +</button>
+        </div>
+
+        <div class="row" style="margin-top:8px">
+          <button id="gerar" class="btn primary" style="width:100%">Gerar PDF assinado + Link</button>
+        </div>
+
+        <div id="resultado" class="result" style="margin-top:10px;font-size:13px"></div>
+
+        <div class="row" style="border-top:1px solid var(--border);padding-top:10px;margin-top:10px">
+          <span class="badge">Self-test</span>
+          <button id="btnSelfTest" class="btn" type="button">Rodar</button>
+        </div>
+        <pre id="selfTestOut" class="mono" style="display:none;background:#0f0f18;border:1px solid var(--border);border-radius:12px;padding:10px;color:#9af59a;font-size:12px"></pre>
+      </section>
+
+      <!-- Visualização do PDF -->
+      <section class="card panel">
+        <div id="pdfContainer" class="border rounded overflow-auto relative" style="border:1px solid var(--border);border-radius:14px">
+          <canvas id="pdfCanvas"></canvas>
+          <div id="sigMarker"></div>
+        </div>
+      </section>
+    </div>
+
+    <p class="hint" style="margin-top:8px">Isto é um carimbo visual no PDF (não é assinatura digital ICP-Brasil).</p>
+  </div>
+
+  <!-- Scripts da lógica original -->
+  <script>
+    (function ensurePdfJs() {
+      if (!window.pdfjsLib) { alert('Falha ao carregar PDF.js'); return; }
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc =
+        'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+    })();
+  </script>
+
+<script>
+const IDB_DB_NAME = 'assinaturas_db_v1';
+const IDB_VERSION = 2;
+let _dbPromise = null;
+
+function idbOpen() {
+  if (_dbPromise) return _dbPromise;
+  _dbPromise = new Promise((resolve, reject) => {
+    const req = indexedDB.open(IDB_DB_NAME, IDB_VERSION);
+    req.onupgradeneeded = () => {
+      const db = req.result;
+      if (!db.objectStoreNames.contains('pdfs')) db.createObjectStore('pdfs'); // key: id, value: Blob
+      if (!db.objectStoreNames.contains('metas')) db.createObjectStore('metas'); // key: id, value: JSON
+      if (!db.objectStoreNames.contains('subs')) db.createObjectStore('subs');   // key: id, value: Array
+      if (!db.objectStoreNames.contains('files')) db.createObjectStore('files'); // key: string, value: Blob
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+  return _dbPromise;
+}
+async function idbPut(store, key, val) {
+  const db = await idbOpen();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(store, 'readwrite');
+    tx.oncomplete = ()=> resolve();
+    tx.onerror = ()=> reject(tx.error);
+    tx.objectStore(store).put(val, key);
+  });
+}
+async function idbGet(store, key) {
+  const db = await idbOpen();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(store, 'readonly');
+    tx.onerror = ()=> reject(tx.error);
+    const req = tx.objectStore(store).get(key);
+    req.onsuccess = ()=> resolve(req.result);
+    req.onerror = ()=> reject(req.error);
+  });
+}
+async function idbGetAllKeys(store) {
+  const db = await idbOpen();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(store, 'readonly');
+    tx.onerror = ()=> reject(tx.error);
+    const req = tx.objectStore(store).getAllKeys();
+    req.onsuccess = ()=> resolve(req.result || []);
+    req.onerror = ()=> reject(req.error);
+  });
+}
+</script>
+
+<script>
+  const $ = (sel) => document.querySelector(sel);
+  const pdfFile = $('#pdfFile');
+  const canvas = $('#pdfCanvas');
+  const ctx = canvas.getContext('2d');
+  const sigMarker = $('#sigMarker');
+  const zoomIn = $('#zoomIn');
+  const zoomOut = $('#zoomOut');
+  const zoomVal = $('#zoomVal');
+  const gerar = $('#gerar');
+  const assinaturaTexto = $('#assinaturaTexto');
+  const carimboTexto = $('#carimboTexto');
+  const fontSize = $('#fontSize');
+  const resultado = $('#resultado');
+  const btnSelfTest = $('#btnSelfTest');
+  const selfTestOut = $('#selfTestOut');
+
+  let pdfDoc = null;
+  let scale = 1.0;
+  let pageIndex = 0;
+  let clickNorm = null;
+
+  function uuidv4() {
+    const a = crypto.getRandomValues(new Uint8Array(16));
+    a[6] = (a[6] & 0x0f) | 0x40;
+    a[8] = (a[8] & 0x3f) | 0x80;
+    const h = [...a].map((b,i)=> (i===4||i===6||i===8||i===10?'-':'') + b.toString(16).padStart(2,'0')).join('');
+    return h;
+  }
+
+  function renderPage() {
+    if (!pdfDoc) return;
+    pdfDoc.getPage(pageIndex + 1).then(page => {
+      const viewport = page.getViewport({ scale });
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      page.render({ canvasContext: ctx, viewport });
+      if (clickNorm) {
+        const x = clickNorm.xNorm * canvas.width;
+        const y = clickNorm.yNormTop * canvas.height;
+        sigMarker.style.left = x + 'px';
+        sigMarker.style.top = y + 'px';
+        sigMarker.style.display = 'block';
+      } else sigMarker.style.display = 'none';
+    });
+  }
+
+  pdfFile.addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const buf = await file.arrayBuffer();
+    const task = pdfjsLib.getDocument({ data: buf });
+    pdfDoc = await task.promise;
+    scale = 1.0; zoomVal.textContent = '100%';
+    clickNorm = null;
+    renderPage();
+  });
+
+  zoomIn.onclick = () => { scale = Math.min(3, scale + 0.1); zoomVal.textContent = Math.round(scale*100)+'%'; renderPage(); };
+  zoomOut.onclick = () => { scale = Math.max(0.3, scale - 0.1); zoomVal.textContent = Math.round(scale*100)+'%'; renderPage(); };
+
+  canvas.addEventListener('click', (ev) => {
+    const rect = canvas.getBoundingClientRect();
+    const xCanvas = ev.clientX - rect.left;
+    const yCanvas = ev.clientY - rect.top;
+    clickNorm = { xNorm: xCanvas / canvas.width, yNormTop: yCanvas / canvas.height };
+    renderPage();
+  });
+
+  async function ensurePdfLib() {
+    if (window.PDFLib && PDFLib.PDFDocument) return true;
+    await new Promise((resolve) => {
+      const s = document.createElement('script');
+      s.src = 'https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js';
+      s.onload = () => resolve();
+      s.onerror = () => resolve();
+      document.head.appendChild(s);
+    });
+    return !!(window.PDFLib && PDFLib.PDFDocument);
+  }
+
+  
+    function computeSite2URL(id) {
+      try {
+        const here = new URL(location.href);
+        const path = here.pathname || '';
+        let target = 'site2.html';
+        // se estiver usando arquivos estilizados, preserva o sufixo
+        const file = path.split('/').pop() || '';
+        if (/^site1/i.test(file)) {
+          target = file.replace(/^site1/i, 'site2');
+        }
+        const url = new URL(target, here);
+        url.hash = 'id=' + id;
+        return url.toString();
+      } catch (e) {
+        return 'site2.html#id=' + id;
+      }
+    }
+
+  gerar.addEventListener('click', async () => {
+    resultado.innerHTML = '';
+    const file = pdfFile.files?.[0];
+    if (!file) { resultado.textContent = 'Envie um PDF primeiro.'; return; }
+    if (!clickNorm) { resultado.textContent = 'Clique no PDF para marcar a assinatura.'; return; }
+    const okLib = await ensurePdfLib();
+    if (!okLib) { resultado.textContent = 'Falha ao carregar pdf-lib.'; return; }
+
+    const raw = new Uint8Array(await file.arrayBuffer());
+    const { PDFDocument, StandardFonts, rgb } = PDFLib;
+    const pdfDocLib = await PDFDocument.load(raw);
+    const pages = pdfDocLib.getPages();
+    const page = pages[Math.max(0, Math.min(pageIndex, pages.length - 1))];
+    const pageW = page.getWidth();
+    const pageH = page.getHeight();
+    const x = (clickNorm.xNorm) * pageW;
+    const y = (1 - clickNorm.yNormTop) * pageH;
+    const font = await pdfDocLib.embedFont(StandardFonts.Helvetica);
+    const size = Math.max(8, Math.min(48, parseFloat(fontSize.value || '16')));
+    const lineWidth = Math.min(200, pageW * 0.6);
+    page.drawLine({ start: { x, y }, end: { x: x + lineWidth, y }, thickness: 1, color: rgb(0,0,0) });
+    const txt = (assinaturaTexto.value || '').trim();
+    if (txt) page.drawText(txt, { x, y: y + 5, size, font, color: rgb(0,0,0) });
+    const termo = (carimboTexto.value || '').trim();
+    if (termo) page.drawText(termo, { x: 50, y: 50, size: 10, font, color: rgb(0,0,0), maxWidth: pageW - 100, lineHeight: 12 });
+    const signedBytes = await pdfDocLib.save();
+
+    const id = uuidv4();
+    const blob = new Blob([signedBytes], { type: 'application/pdf' });
+    try {
+      await idbPut('pdfs', id, blob);
+      await idbPut('metas', id, { createdAt: new Date().toISOString(), filename: file.name || 'documento.pdf' });
+      await idbPut('subs', id, []);
+    } catch (e) {
+      console.error(e);
+      resultado.innerHTML = '<span class="text-red-600">Erro ao salvar no IndexedDB.</span>';
+      return;
+    }
+
+    const link = computeSite2URL(id);
+    const a = document.createElement('a');
+    a.href = link; a.textContent = link;
+    const openNow = document.createElement('button');
+    openNow.textContent = 'Abrir agora';
+    openNow.className = 'px-2 py-1 text-xs rounded bg-black text-white';
+    openNow.onclick = () => { window.location.href = link; };
+
+    const dl = document.createElement('a');
+    dl.href = URL.createObjectURL(blob);
+    dl.download = 'documento_assinado.pdf';
+    dl.textContent = 'Baixar PDF assinado';
+    dl.className = 'text-blue-600 underline';
+
+    const copyBtn = document.createElement('button');
+    copyBtn.textContent = 'Copiar link';
+    copyBtn.className = 'px-2 py-1 text-xs rounded bg-gray-200';
+    copyBtn.onclick = async () => {
+      try { await navigator.clipboard.writeText(link); copyBtn.textContent = 'Copiado!'; setTimeout(()=> copyBtn.textContent='Copiar link',1500); } catch { }
+    };
+
+    resultado.innerHTML = '✅ Link criado: ';
+    resultado.appendChild(a);
+    resultado.appendChild(document.createElement('br'));
+    resultado.appendChild(dl);
+    resultado.appendChild(document.createTextNode(' '));
+    resultado.appendChild(copyBtn);
+    resultado.appendChild(document.createTextNode(' '));
+    resultado.appendChild(openNow);
+  });
+
+  btnSelfTest.addEventListener('click', async () => {
+    const out = [];
+    const ok = (m)=> out.push('✅ ' + m);
+    const no = (m)=> out.push('❌ ' + m);
+    if (window.pdfjsLib && pdfjsLib.GlobalWorkerOptions) ok('PDF.js OK'); else no('PDF.js AUSENTE');
+    const okLib = await ensurePdfLib(); if (okLib) ok('pdf-lib OK'); else no('pdf-lib AUSENTE');
+    try {
+      if (navigator.storage && navigator.storage.estimate) {
+        const est = await navigator.storage.estimate();
+        ok('Storage disponível: ' + Math.round((est.quota||0)/1024/1024) + ' MB');
+      }
+      await idbPut('metas', '__test__', { ping: true, at: Date.now() });
+      const got = await idbGet('metas', '__test__');
+      if (got && got.ping) ok('IndexedDB OK'); else no('IndexedDB falhou');
+    } catch(e) { no('IndexedDB erro: ' + (e && e.message)); }
+    selfTestOut.textContent = out.join('\n');
+    selfTestOut.classList.remove('hidden');
+  });
+</script>
+</body>
+</html>
