@@ -1,6 +1,6 @@
 {
   "private": true,
-  "name": "assinatura-upload-only",
+  "name": "upload-only-diag",
   "version": "1.0.0",
   "dependencies": {
     "busboy": "^1.6.0",

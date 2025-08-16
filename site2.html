@@ -523,11 +523,8 @@ header nav { display:flex; gap:8px; flex-wrap:wrap }
     a.download = `pacote_${id}.zip`; a.click();
   });
 </script>
-<!-- INÍCIO: Integração Upload Google Drive + WhatsApp -->
+<!-- INÍCIO: Integração Upload Google Drive + Diagnóstico -->
 <script>
-// Modo "apenas upload": sobe para a nuvem e mostra os links. Não abre WhatsApp e não usa fallback ZIP.
-// Corrigido: evita recursão renomeando helpers para NÃO colidir com window.getSignedPdfFile / window.blobsForLatestSubmission
-
 async function tryIdbOpen(){ try { const fn = window['idbOpen']; if (typeof fn === 'function') return await fn(); } catch(e){} }
 async function trySaveSubmission(){ try { const fn = window['saveSubmissionFromForm']; if (typeof fn === 'function') return await fn(); } catch(e){} }
 
@@ -536,9 +533,8 @@ async function resolveSignedPdfFile(){
   if (existing && existing !== resolveSignedPdfFile) return await existing();
   const el = document.querySelector('#pdfAssinado, input[data-signed-pdf]');
   if (el && el.files && el.files[0]) return el.files[0];
-  throw new Error('PDF assinado não encontrado. Ajuste getSignedPdfFile() no seu app.');
+  throw new Error('PDF assinado não encontrado.');
 }
-
 async function resolveLatestSubmissionBlobs(){
   const existing = window['blobsForLatestSubmission'];
   if (existing && existing !== resolveLatestSubmissionBlobs) return await existing();
@@ -549,81 +545,50 @@ async function resolveLatestSubmissionBlobs(){
   });
   return files;
 }
-
-async function collectAllFilesForUpload() {
-  const pdf = await resolveSignedPdfFile();
-  const attaches = await resolveLatestSubmissionBlobs();
-  const list = [];
-  if (pdf) list.push(pdf);
-  for (const a of (attaches || [])) list.push(a);
-  return list;
-}
+async function collectAllFilesForUpload(){ const a=await resolveSignedPdfFile(); const b=await resolveLatestSubmissionBlobs(); return [a, ...b].filter(Boolean); }
 
 async function uploadToCloud(files) {
-  if (!files || !files.length) throw new Error('Nenhum arquivo para upload.');
   const fd = new FormData();
-  for (const f of files) {
-    const name = f.name || 'arquivo';
-    fd.append('files', f, name);
-  }
+  for (const f of files) fd.append('files', f, f.name || 'arquivo');
   const res = await fetch('/.netlify/functions/upload', { method: 'POST', body: fd });
-  if (!res.ok) throw new Error('Falha no upload: ' + (await res.text()));
-  const data = await res.json();
-  return data.files || [];
+  const text = await res.text();
+  if (!res.ok) {
+    const short = text.slice(0, 400);
+    const info = `status=${res.status} ${res.statusText} | body=${short}`;
+    throw new Error('Falha no upload: ' + info);
+  }
+  try { return JSON.parse(text).files || []; } catch(e){ throw new Error('Resposta inválida da função: ' + text.slice(0,400)); }
 }
 
 (function attachUploadOnly(){
-  let msgEl = document.querySelector('#status, #msg, .status');
-  if (!msgEl) {
-    msgEl = document.createElement('div');
-    msgEl.id = 'status';
-    msgEl.style.marginTop = '12px';
-    msgEl.style.fontSize = '14px';
-    document.body.appendChild(msgEl);
-  }
-  function setMsgHtml(html){ msgEl.innerHTML = html; }
+  let msgEl = document.querySelector('#status, #msg, .status') || document.createElement('div');
+  msgEl.id = msgEl.id || 'status'; msgEl.style.marginTop = '12px'; msgEl.style.fontSize='14px';
+  if (!msgEl.parentNode) document.body.appendChild(msgEl);
+  const setMsg = (h)=> msgEl.innerHTML = h;
 
   async function handleSend(){
     try {
-      setMsgHtml('Enviando arquivos para a nuvem...');
-      await tryIdbOpen();
-      await trySaveSubmission();
+      setMsg('Enviando arquivos para a nuvem...');
+      await tryIdbOpen(); await trySaveSubmission();
       const files = await collectAllFilesForUpload();
       const uploaded = await uploadToCloud(files);
-
-      const list = (uploaded || []).map(f => {
-        const link = f.webViewLink || f.webContentLink || '#';
-        const name = f.name || 'arquivo';
-        return `<li><a href="${link}" target="_blank" rel="noopener">${name}</a></li>`;
-      }).join('');
-      setMsgHtml('✅ Upload concluído.<br>Arquivos na nuvem:<ul>' + list + '</ul>');
+      const items = uploaded.map(f=>`<li><a target="_blank" rel="noopener" href="${f.webViewLink||f.webContentLink||'#'}">${f.name||'arquivo'}</a></li>`).join('');
+      setMsg('✅ Upload concluído.<ul>' + items + '</ul>');
     } catch (e) {
       console.error(e);
-      setMsgHtml('Erro ao enviar: ' + (e && e.message ? e.message : e));
-      alert('Falha no upload: ' + (e && e.message ? e.message : e));
+      setMsg('Erro ao enviar: ' + (e.message || e));
+      alert('Falha no upload: ' + (e.message || e));
     }
   }
 
   let btn = document.getElementById('btnSend') || document.querySelector('[data-action="send"], button#enviarWhatsapp');
   if (btn && !btn.dataset._uploadOnly) {
-    btn.addEventListener('click', (ev) => { ev.preventDefault(); handleSend(); });
+    btn.addEventListener('click', (ev)=>{ ev.preventDefault(); handleSend(); });
     btn.dataset._uploadOnly = '1';
-    try {
-      const t = (btn.textContent || '').trim().toLowerCase();
-      if (/whatsapp/.test(t)) btn.textContent = 'Enviar (somente nuvem)';
-    } catch {}
-  } else if (!btn) {
-    const candidates = Array.from(document.querySelectorAll('button, a')).filter(el => {
-      const t = (el.textContent || '').trim().toLowerCase();
-      return /enviar|assinar/.test(t);
-    });
-    if (candidates[0] && !candidates[0].dataset._uploadOnly) {
-      candidates[0].addEventListener('click', (ev) => { ev.preventDefault(); handleSend(); });
-      candidates[0].dataset._uploadOnly = '1';
-    }
+    try { if ((btn.textContent||'').toLowerCase().includes('whatsapp')) btn.textContent='Enviar (somente nuvem)'; } catch {}
   }
 })();
 </script>
-<!-- FIM: Integração Upload Google Drive + WhatsApp -->
+<!-- FIM: Integração Upload Google Drive + Diagnóstico -->
 </body>
 </html>
